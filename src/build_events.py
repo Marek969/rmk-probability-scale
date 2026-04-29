@@ -14,7 +14,7 @@ import io
 import json
 from collections import Counter
 
-RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
+RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
 
 
 def load_json(path: Path) -> Any:
@@ -126,6 +126,8 @@ def build_events_from_raw() -> list[dict[str, object]]:
         return build_events_from_stubs()
 
     # Derive counts from the current-year forest fire file.
+    fire_days = {row.get("sundmuse_kuupaev_dt") for row in forest_rows if row.get("sundmuse_kuupaev_dt")}
+    total_fire_days = len(fire_days)
     total_fires = len(forest_rows)
     by_region = Counter(row.get('maakond', 'unknown') for row in forest_rows)
     harju_fires = by_region.get('Harju maakond', 0)
@@ -133,11 +135,11 @@ def build_events_from_raw() -> list[dict[str, object]]:
     rows = [
         {
             "event": "Forest fire happens on a random day",
-            "numerator": total_fires,
+            "numerator": total_fire_days,
             "denominator": 365,
             "year": 2026,
             "source_url": "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv",
-            "notes": "probability approximated as current-year incident count per day",
+            "notes": "probability estimated from distinct fire days in the current year",
         },
         {
             "event": "A forest fire is in Harju county",

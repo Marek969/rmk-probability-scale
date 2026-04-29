@@ -12,7 +12,7 @@ from typing import Any
 
 import requests
 
-RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
+RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 HEADERS = {"User-Agent": "rmk-probability-scale/0.1 (+https://github.com/)"}
