@@ -18,14 +18,26 @@ import requests
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
+HEADERS = {"User-Agent": "rmk-probability-scale/0.1 (+https://github.com/)"}
+
+
+def _write_text(url: str, out_name: str, timeout: int = 30) -> Path:
+    """Fetch a text endpoint and persist it to `data/raw/`."""
+
+    resp = requests.get(url, timeout=timeout, headers=HEADERS)
+    resp.raise_for_status()
+
+    out = RAW_DIR / out_name
+    out.write_text(resp.text, encoding="utf-8")
+    return out
+
 
 def fetch_json_to_file(url: str, out_name: str, timeout: int = 30) -> Path:
     """Fetch `url` and write raw JSON to `data/raw/{out_name}`.
 
     Returns the path to the written file.
     """
-    headers = {"User-Agent": "rmk-probability-scale/0.1 (+https://github.com/)"}
-    resp = requests.get(url, timeout=timeout, headers=headers)
+    resp = requests.get(url, timeout=timeout, headers=HEADERS)
     resp.raise_for_status()
 
     payload: Any = resp.json()
@@ -34,25 +46,26 @@ def fetch_json_to_file(url: str, out_name: str, timeout: int = 30) -> Path:
     return out
 
 
-def example_fetch_births(year: int = 2024) -> Path:
-    """Example wrapper for fetching births data.
+def fetch_births_table() -> Path:
+    """Fetch the births PxWeb landing page as raw HTML.
 
-    Replace the URL below with the concrete Statistikaamet endpoint for births
-    (e.g. a JSON-stat or REST URL). We keep the function so pipeline code is
-    explicit about which datasets it expects.
+    The page is the stable source of truth for the births table and keeps the
+    first data-ingestion commit small.
     """
-    # TODO: replace with the real Statistikaamet endpoint for births by region
-    url = f"https://andmed.stat.ee/api/v1/some_births_endpoint?year={year}"
-    return fetch_json_to_file(url, out_name=f"births_{year}.json")
+
+    return _write_text(
+        "https://andmed.stat.ee/et/stat/rahvastik__rahvastikusundmused__sunnid/RV061",
+        out_name="births_RV061.html",
+    )
 
 
-def example_fetch_deaths_by_cause(year: int = 2024) -> Path:
-    """Fetch mortality by cause (cardiovascular, drowning, etc.).
+def fetch_deaths_table() -> Path:
+    """Fetch the deaths PxWeb landing page as raw HTML."""
 
-    Replace with the real endpoint; many mortality datasets are available via
-    Statistics Estonia API (JSON-stat)."""
-    url = f"https://andmed.stat.ee/api/v1/some_deaths_by_cause?year={year}"
-    return fetch_json_to_file(url, out_name=f"deaths_cause_{year}.json")
+    return _write_text(
+        "https://andmed.stat.ee/et/stat/rahvastik__rahvastikusundmused__surmad/RV56",
+        out_name="deaths_RV56.html",
+    )
 
 
 def fetch_forest_fire_csv() -> Path:
@@ -62,11 +75,7 @@ def fetch_forest_fire_csv() -> Path:
     It keeps the first commit of the data pipeline simple and readable.
     """
 
-    url = "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv"
-    headers = {"User-Agent": "rmk-probability-scale/0.1 (+https://github.com/)"}
-    resp = requests.get(url, timeout=30, headers=headers)
-    resp.raise_for_status()
-
-    out = RAW_DIR / "forest_fires_current_year.csv"
-    out.write_text(resp.text, encoding="utf-8")
-    return out
+    return _write_text(
+        "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv",
+        out_name="forest_fires_current_year.csv",
+    )
