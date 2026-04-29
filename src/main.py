@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from fetch_data import fetch_forest_fire_csv
+from fetch_data import fetch_births_table, fetch_deaths_table, fetch_forest_fire_csv
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -18,8 +18,10 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def run(fetch: bool = False) -> None:
     if fetch:
-        print("Fetching forest-fire source CSV")
+        print("Fetching raw source pages/files")
         try:
+            fetch_births_table()
+            fetch_deaths_table()
             fetch_forest_fire_csv()
         except Exception as e:
             print("Fetch failed:", e)
@@ -44,8 +46,10 @@ def main() -> None:
     ap.add_argument("--fetch-only", action="store_true", help="Only fetch raw datasets and exit")
     args = ap.parse_args()
     if args.fetch_only:
+        fetch_births_table()
+        fetch_deaths_table()
         fetch_forest_fire_csv()
-        print("Fetched raw forest-fire CSV only")
+        print("Fetched raw births, deaths and forest-fire sources only")
         return
     run(fetch=args.fetch)
 
