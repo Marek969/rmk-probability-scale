@@ -1,0 +1,24 @@
+[project]
+name = "rmk-probability-scale"
+version = "0.1.0"
+description = "Probability scale challenge project for RMK data team internship"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "matplotlib>=3.8.0",
+  "numpy>=1.26.0",
+  "requests>=2.31.0",
+]
+
+[project.scripts]
+build-scale = "probability_scale.main:run"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
