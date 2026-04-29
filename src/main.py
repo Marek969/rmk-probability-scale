@@ -1,9 +1,4 @@
-"""Orchestrator: fetch -> build -> plot
-
-Run `python -m main` from repository root (uses PYTHONPATH=src) or
-install dependencies via `pip install -r requirements.txt` and run
-`python -m main`.
-"""
+"""Orchestrator: fetch -> build -> plot."""
 
 from __future__ import annotations
 
@@ -18,6 +13,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def run(fetch: bool = False) -> None:
     if fetch:
+        # Fetch raw source files before building derived outputs.
         print("Fetching raw source pages/files")
         try:
             fetch_births_table()
@@ -26,6 +22,7 @@ def run(fetch: bool = False) -> None:
         except Exception as e:
             print("Fetch failed:", e)
 
+    # Import build and plot modules only when processing is needed.
     from build_events import build_events_from_raw, write_events_csv
 
     from plot_scale import plot_probability_scale
@@ -46,6 +43,7 @@ def main() -> None:
     ap.add_argument("--fetch-only", action="store_true", help="Only fetch raw datasets and exit")
     args = ap.parse_args()
     if args.fetch_only:
+        # Fetch inputs only in this mode.
         fetch_births_table()
         fetch_deaths_table()
         fetch_forest_fire_csv()

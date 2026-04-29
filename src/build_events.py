@@ -1,8 +1,7 @@
 """Transform raw datasets into standardized event probabilities.
 
-The functions here expect raw JSON files saved by `fetch_data.py` in
-`data/raw/`. They compute numerator/denominator pairs and return a
-DataFrame with the final event schema.
+The functions here expect raw files saved by `fetch_data.py` in `data/raw/`.
+They compute numerator/denominator pairs and return the final event schema.
 """
 
 from __future__ import annotations
@@ -28,6 +27,7 @@ def build_events_from_stubs() -> list[dict[str, object]]:
     This is useful for offline testing before the real fetcher is wired up.
     Replace the numerators with parsed values from raw JSON files.
     """
+    # Fallback rows keep the pipeline runnable without raw inputs.
     rows = [
         {
             "event": "Born in Tallinn",
@@ -100,6 +100,7 @@ def _read_forest_fire_rows() -> list[dict[str, str]]:
     if not lines:
         return []
 
+    # The source file uses a quoted tab-delimited header.
     header = lines[0].replace('"', '').split('\t')
     reader = csv.reader(io.StringIO("\n".join(lines[1:])), delimiter='\t', quotechar='"')
 
@@ -109,6 +110,7 @@ def _read_forest_fire_rows() -> list[dict[str, str]]:
             continue
         cleaned = [cell.strip().strip('"') for cell in row]
         if len(cleaned) != len(header):
+            # Skip rows that do not match the header width.
             continue
         rows.append(dict(zip(header, cleaned)))
     return rows
@@ -117,14 +119,13 @@ def _read_forest_fire_rows() -> list[dict[str, str]]:
 def build_events_from_raw() -> list[dict[str, object]]:
     """Parse the raw JSON files and compute the final DataFrame.
 
-    Implement parsers here that read files produced by `fetch_data.py` and
-        extract numerators / denominators. Each dataset has its own shape, so
-        keep parsing code explicit and well-documented.
+    Each dataset has its own shape, so keep parsing code explicit.
     """
     forest_rows = _read_forest_fire_rows()
     if not forest_rows:
         return build_events_from_stubs()
 
+    # Derive counts from the current-year forest fire file.
     total_fires = len(forest_rows)
     by_region = Counter(row.get('maakond', 'unknown') for row in forest_rows)
     harju_fires = by_region.get('Harju maakond', 0)
@@ -149,6 +150,7 @@ def build_events_from_raw() -> list[dict[str, object]]:
     ]
 
     for row in rows:
+        # Convert counts to probabilities for the output table.
         row["probability"] = row["numerator"] / row["denominator"]
     return rows
 

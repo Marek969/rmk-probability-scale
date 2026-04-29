@@ -1,10 +1,7 @@
-"""Small helpers to fetch raw data from official Estonia open-data sources.
+"""Helpers to fetch raw data from official Estonia open-data sources.
 
-This module contains lightweight functions that download dataset URLs and
-persist the raw response into `data/raw/` for reproducibility.
-
-NOTE: Statistikaamet exposes many endpoints (JSON-stat, REST). For reliability
-we treat the endpoint URL as an opaque parameter and persist the raw payload.
+This module downloads dataset URLs and persists the raw response into
+`data/raw/` for reproducibility.
 """
 
 from __future__ import annotations
@@ -47,11 +44,7 @@ def fetch_json_to_file(url: str, out_name: str, timeout: int = 30) -> Path:
 
 
 def fetch_births_table() -> Path:
-    """Fetch the births PxWeb landing page as raw HTML.
-
-    The page is the stable source of truth for the births table and keeps the
-    first data-ingestion commit small.
-    """
+    """Fetch the births PxWeb landing page as raw HTML."""
 
     return _write_text(
         "https://andmed.stat.ee/et/stat/rahvastik__rahvastikusundmused__sunnid/RV061",
@@ -69,11 +62,7 @@ def fetch_deaths_table() -> Path:
 
 
 def fetch_forest_fire_csv() -> Path:
-    """Fetch the current forest and landscape fires CSV.
-
-    This is a real, direct downloadable source linked from andmed.eesti.ee.
-    It keeps the first commit of the data pipeline simple and readable.
-    """
+    """Fetch the current forest and landscape fires CSV."""
 
     return _write_text(
         "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv",

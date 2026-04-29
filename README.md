@@ -1,10 +1,10 @@
 # RMK Data Team Internship 2026: Probability Scale
 
-This repository contains a reproducible Python workflow for building a probability scale: a visual list of events ordered by their probabilities, aimed at improving intuition about probability.
+This repository contains a reproducible Python workflow for building a probability scale: a visual list of events ordered by their probabilities.
 
 ## Why this approach
 
-I focused on:
+The current build uses:
 
 - Programmatic ingestion from official Estonia open data sources.
 - Clean, readable code with small modules.
@@ -98,12 +98,6 @@ After running, you will get:
 - Event probabilities are estimated from counts in the raw file.
 - To improve readability, all values are mapped to a unified probability scale p in (0,1].
 - The chart is on a logarithmic axis to show both rare and common events together.
-
-## Suggested extensions
-
-- Add births, deaths, traffic, and company-registration sources one by one.
-- Add uncertainty bands and Bayesian updates by year.
-- Build a notebook that narrates assumptions and trade-offs.
 
 ## License
 

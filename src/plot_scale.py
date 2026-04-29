@@ -18,6 +18,7 @@ def plot_probability_scale(rows: list[dict[str, object]], out_png: Path, title: 
     probs = np.array([float(row["probability"]) for row in rows])
     labels = [str(row["event"]) for row in rows]
 
+    # Dark canvas for the exported figure.
     fig, ax = plt.subplots(figsize=(12, 6), constrained_layout=True)
     fig.patch.set_facecolor("#0b0f1a")
     ax.set_facecolor("#0b0f1a")
@@ -26,11 +27,13 @@ def plot_probability_scale(rows: list[dict[str, object]], out_png: Path, title: 
     ax.scatter(probs, np.zeros_like(probs), color="#ffd54f", s=50, zorder=5)
 
     for i, (p, label) in enumerate(zip(probs, labels)):
+        # Alternate label direction to reduce overlap.
         direction = 1 if i % 2 == 0 else -1
         y = 0.25 * direction
         ax.plot([p, p * 1.3], [0, y], color="#8fa8c8")
         ax.text(p * 1.35, y, f"{label}\n{p:.6g}", color="#ffffff", va="center", fontsize=10)
 
+    # Log scale keeps rare and common events visible together.
     ax.set_xscale("log")
     ax.set_xlim(max(probs.min() * 0.4, 1e-6), 1.05)
     ax.set_ylim(-1, 1)
