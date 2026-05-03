@@ -7,94 +7,93 @@ They compute numerator/denominator pairs and return the final event schema.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
-
 import csv
 import io
 import json
 from collections import Counter
 
 RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
+FOREST_FIRE_URL = "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv"
+RV021_URL = "https://andmed.stat.ee/api/v1/en/stat/rahvastik/rahvastikunaitajad-ja-koosseis/rahvaarv-ja-rahvastiku-koosseis/RV021.PX"
+TS093_URL = "https://andmed.stat.ee/api/v1/en/stat/majandus/transport/liiklusennetused/TS093.PX"
+RV57_URL = "https://andmed.stat.ee/api/v1/en/stat/rahvastik/rahvastikusundmused/surmad/RV57.PX"
+RV11U_URL = "https://andmed.stat.ee/api/v1/en/stat/rahvastik/rahvastikusundmused/sunnid/RV11U.PX"
+RV047_URL = "https://andmed.stat.ee/api/v1/en/stat/rahvastik/rahvastikunaitajad-ja-koosseis/demograafilised-pehinaitajad/RV047.PX"
 
 
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+def _require_raw_file(name: str) -> Path:
+    """Return a raw-data path or fail with a reproducibility hint."""
+    path = RAW_DIR / name
+    if not path.exists():
+        raise FileNotFoundError(f"Missing {path}. Run `PYTHONPATH=src python3 -m main --fetch` first.")
+    return path
 
 
-def build_events_from_stubs() -> list[dict[str, object]]:
-    """Return a small DataFrame with example events and stub numerators.
+def _read_json(path: Path) -> dict[str, object]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected object payload in {path}")
+    return payload
 
-    This is useful for offline testing before the real fetcher is wired up.
-    Replace the numerators with parsed values from raw JSON files.
-    """
-    # Fallback rows keep the pipeline runnable without raw inputs.
-    rows = [
-        {
-            "event": "Born in Tallinn",
-            "numerator": 3600,  # TODO: fill from births Tallinn 2024
-            "denominator": 14000,  # TODO: births in 2024 (or relevant denom)
-            "year": 2024,
-            "source_url": "https://andmed.stat.ee/...",
-            "notes": "placeholder data",
-        },
-        {
-            "event": "Born near Jaanipäev (20-26 June)",
-            "numerator": 320,  # TODO
-            "denominator": 14000,
-            "year": 2024,
-            "source_url": "https://andmed.stat.ee/...",
-            "notes": "placeholder",
-        },
-        {
-            "event": "Start a new company (registered)",
-            "numerator": 8200,
-            "denominator": 1000000,  # adult population approx
-            "year": 2024,
-            "source_url": "https://ettevotjaportaal...",
-            "notes": "placeholder",
-        },
-        {
-            "event": "Injured in traffic accident",
-            "numerator": 4500,
-            "denominator": 1320000,
-            "year": 2024,
-            "source_url": "https://andmed.stat.ee/traffic",
-            "notes": "placeholder",
-        },
-        {
-            "event": "Die by drowning",
-            "numerator": 41,
-            "denominator": 1320000,
-            "year": 2024,
-            "source_url": "https://andmed.stat.ee/deaths",
-            "notes": "placeholder",
-        },
-        {
-            "event": "Forest fire occurrence (per year)",
-            "numerator": 12,
-            "denominator": 14000,  # could be per 1000ha; adjust later
-            "year": 2024,
-            "source_url": "https://andmed.stat.ee/forestfires",
-            "notes": "placeholder",
-        },
-    ]
 
-    for row in rows:
-        row["probability"] = row["numerator"] / row["denominator"]
-    return rows
+def _jsonstat_value(payload: dict[str, object], selections: dict[str, str]) -> float:
+    """Extract a single value from JSON-stat2 by dimension code values."""
+    ids = payload["id"]
+    sizes = payload["size"]
+    dimensions = payload["dimension"]
+    values = payload["value"]
+    if not isinstance(ids, list) or not isinstance(sizes, list) or not isinstance(values, list):
+        raise ValueError("Unexpected JSON-stat2 payload layout")
+
+    stride = 1
+    strides: dict[str, int] = {}
+    for dim_id, size in reversed(list(zip(ids, sizes))):
+        if not isinstance(dim_id, str):
+            raise ValueError("Dimension id is not a string")
+        strides[dim_id] = stride
+        stride *= int(size)
+
+    offset = 0
+    for dim_id in ids:
+        if not isinstance(dim_id, str):
+            continue
+        category_index = dimensions[dim_id]["category"]["index"]
+        offset += int(category_index[selections[dim_id]]) * strides[dim_id]
+
+    value = values[offset]
+    if value is None:
+        raise ValueError(f"Missing JSON-stat value for {selections}")
+    return float(value)
+
+
+def _event(
+    event: str,
+    probability: float,
+    numerator: float | int,
+    denominator: float | int,
+    year: int,
+    source_name: str,
+    source_url: str,
+    method: str,
+    notes: str,
+) -> dict[str, object]:
+    """Create one normalized event row."""
+    return {
+        "event": event,
+        "probability": probability,
+        "numerator": numerator,
+        "denominator": denominator,
+        "year": year,
+        "source_name": source_name,
+        "source_url": source_url,
+        "method": method,
+        "notes": notes,
+    }
 
 
 def _read_forest_fire_rows() -> list[dict[str, str]]:
-    """Parse the tab-separated forest fire CSV into dictionaries.
-
-    The source is intentionally kept raw in `data/raw/` so this parser is the
-    only place that knows about column names or delimiters.
-    """
-
-    path = RAW_DIR / "forest_fires_current_year.csv"
-    if not path.exists():
-        return []
-
+    """Parse the tab-separated forest fire CSV into dictionaries."""
+    path = _require_raw_file("forest_fires_current_year.csv")
     raw_text = path.read_text(encoding="utf-8")
     lines = raw_text.splitlines()
     if not lines:
@@ -117,51 +116,153 @@ def _read_forest_fire_rows() -> list[dict[str, str]]:
 
 
 def build_events_from_raw() -> list[dict[str, object]]:
-    """Parse the raw JSON files and compute the final DataFrame.
+    """Parse raw files and compute the final probability-scale events.
 
     Each dataset has its own shape, so keep parsing code explicit.
     """
     forest_rows = _read_forest_fire_rows()
     if not forest_rows:
-        return build_events_from_stubs()
+        raise ValueError("Forest-fire raw file exists but contains no parseable rows.")
 
-    # Derive counts from the current-year forest fire file.
-    fire_days = {row.get("sundmuse_kuupaev_dt") for row in forest_rows if row.get("sundmuse_kuupaev_dt")}
-    total_fire_days = len(fire_days)
+    # Derive event counts from the current-year forest-fire file.
+    year = int(max(row["sundmuse_kuupaev_dt"] for row in forest_rows if row.get("sundmuse_kuupaev_dt"))[:4])
     total_fires = len(forest_rows)
-    by_region = Counter(row.get('maakond', 'unknown') for row in forest_rows)
-    harju_fires = by_region.get('Harju maakond', 0)
+    by_county = Counter(row.get("maakond", "unknown") for row in forest_rows)
+    harju_fires = by_county.get("Harju maakond", 0)
+    population_payload = _read_json(_require_raw_file("population_RV021_2024.json"))
+    traffic_payload = _read_json(_require_raw_file("traffic_injuries_TS093_2024.json"))
+    drowning_payload = _read_json(_require_raw_file("drowning_rate_RV57_2024.json"))
+    births_payload = _read_json(_require_raw_file("births_RV11U_2024.json"))
+    marriages_payload = _read_json(_require_raw_file("marriages_RV047_2024.json"))
+
+    def burned_area_m2(row: dict[str, str]) -> float:
+        """Return burned area in the source file's numeric units."""
+        forest = float(row.get("metsa_polenud_pind_alates_25_05_2021") or 0)
+        landscape = float(row.get("maastiku_polenud_pind_alates_25_05_2021") or 0)
+        return forest + landscape
+
+    large_fires = sum(1 for row in forest_rows if burned_area_m2(row) >= 10_000)
+    harju_fires = by_county.get("Harju maakond", 0)
+
+    population_total = _jsonstat_value(population_payload, {"Sugu": "1", "Aasta": "2024", "Vanuserühm": "1"})
+    drowning_per_100k = _jsonstat_value(
+        drowning_payload,
+        {"Aasta": "2024", "Surmapõhjus RHK-10 järgi": "77", "Sugu": "1", "Vanuserühm": "1"},
+    )
+    traffic_injuries_total = sum(float(v) for v in traffic_payload.get("value", []) if v is not None)
+    total_births = _jsonstat_value(births_payload, {"Maakond": "1", "Aasta": "2024"})
+    tallinn_births = _jsonstat_value(births_payload, {"Maakond": "784", "Aasta": "2024"})
+    marriages_total = _jsonstat_value(marriages_payload, {"Aasta": "2024", "Näitaja": "1"})
 
     rows = [
-        {
-            "event": "Forest fire happens on a random day",
-            "numerator": total_fire_days,
-            "denominator": 365,
-            "year": 2026,
-            "source_url": "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv",
-            "notes": "probability estimated from distinct fire days in the current year",
-        },
-        {
-            "event": "A forest fire is in Harju county",
-            "numerator": harju_fires,
-            "denominator": total_fires,
-            "year": 2026,
-            "source_url": "https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv",
-            "notes": "conditional probability among observed forest fires",
-        },
+        _event(
+            "Being born on leap day",
+            1 / 1461,
+            1,
+            1461,
+            2024,
+            "Probability benchmark",
+            "",
+            "one leap day in a four-year cycle",
+            "exact-calculation anchor",
+        ),
+        _event(
+            "Rolling a six on a fair die",
+            1 / 6,
+            1,
+            6,
+            2024,
+            "Probability benchmark",
+            "",
+            "one target face on a fair six-sided die",
+            "exact-calculation anchor",
+        ),
+        _event(
+            "Being born in Tallinn",
+            tallinn_births / total_births if total_births > 0 else 0,
+            tallinn_births,
+            total_births,
+            2024,
+            "Statistics Estonia (RV11U)",
+            RV11U_URL,
+            "Births in Tallinn divided by births in Estonia",
+            "probability among live births",
+        ),
+        _event(
+            "Getting married this year",
+            marriages_total / population_total if population_total > 0 else 0,
+            marriages_total,
+            population_total,
+            2024,
+            "Statistics Estonia (RV047 + RV021)",
+            RV047_URL,
+            "All marriages divided by total population",
+            "annual population-level probability proxy",
+        ),
+        _event(
+            "Traffic injury during a year in Estonia",
+            traffic_injuries_total / population_total if population_total > 0 else 0,
+            traffic_injuries_total,
+            population_total,
+            2024,
+            "Statistics Estonia (TS093 + RV021)",
+            TS093_URL,
+            "Total injured in traffic accidents divided by total population",
+            "year-level risk approximation",
+        ),
+        _event(
+            "Death by drowning during a year in Estonia",
+            drowning_per_100k / 100000 if drowning_per_100k > 0 else 0,
+            drowning_per_100k,
+            100000,
+            2024,
+            "Statistics Estonia (RV57)",
+            RV57_URL,
+            "Published deaths per 100,000 population converted to probability",
+            "cause-specific annual mortality rate",
+        ),
+        _event(
+            "Fire occurs in Harju county",
+            harju_fires / total_fires if total_fires > 0 else 0,
+            harju_fires,
+            total_fires,
+            year,
+            "Derived from Rescue Board open data",
+            FOREST_FIRE_URL,
+            "Harju county incidents divided by all observed fires",
+            "conditional county probability among fires",
+        ),
+        _event(
+            "Fire burns 1+ hectare",
+            large_fires / total_fires if total_fires > 0 else 0,
+            large_fires,
+            total_fires,
+            year,
+            "Derived from Rescue Board open data",
+            FOREST_FIRE_URL,
+            "Incidents with burned area >= 10,000 m2 divided by all fires",
+            "significant fire size event",
+        ),
     ]
 
-    for row in rows:
-        # Convert counts to probabilities for the output table.
-        row["probability"] = row["numerator"] / row["denominator"]
-    return rows
+    rows = [r for r in rows if 0 < float(r["probability"]) <= 1]
+    return sorted(rows, key=lambda row: float(row["probability"]))
 
 
 def write_events_csv(rows: list[dict[str, object]], out_path: Path) -> Path:
     """Write the final event rows to CSV using the standard library."""
-
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["event", "probability", "numerator", "denominator", "year", "source_url", "notes"]
+    fieldnames = [
+        "event",
+        "probability",
+        "numerator",
+        "denominator",
+        "year",
+        "source_name",
+        "source_url",
+        "method",
+        "notes",
+    ]
     with out_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()

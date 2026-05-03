@@ -5,26 +5,19 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from fetch_data import fetch_births_table, fetch_deaths_table, fetch_forest_fire_csv
+from fetch_data import fetch_all_sources
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def run(fetch: bool = False) -> None:
+def run(fetch: bool = True) -> None:
     if fetch:
-        # Fetch raw source files before building derived outputs.
-        print("Fetching raw source pages/files")
-        try:
-            fetch_births_table()
-            fetch_deaths_table()
-            fetch_forest_fire_csv()
-        except Exception as e:
-            print("Fetch failed:", e)
+        print("Fetching raw source files")
+        for path in fetch_all_sources():
+            print("Fetched", path)
 
-    # Import build and plot modules only when processing is needed.
     from build_events import build_events_from_raw, write_events_csv
-
     from plot_scale import plot_probability_scale
 
     rows = build_events_from_raw()
@@ -33,7 +26,7 @@ def run(fetch: bool = False) -> None:
     print("Wrote", csv_out)
 
     png = OUTPUT_DIR / "probability_scale.png"
-    plot_probability_scale(rows, png, title="Probability Scale — Estonia (2024)")
+    plot_probability_scale(rows, png, title="Probability Scale - Estonia")
     print("Wrote", png)
 
 
@@ -41,15 +34,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fetch", action="store_true", help="Fetch raw datasets before processing")
     ap.add_argument("--fetch-only", action="store_true", help="Only fetch raw datasets and exit")
+    ap.add_argument("--no-fetch", action="store_true", help="Build from existing files in data/raw/")
     args = ap.parse_args()
     if args.fetch_only:
-        # Fetch inputs only in this mode.
-        fetch_births_table()
-        fetch_deaths_table()
-        fetch_forest_fire_csv()
-        print("Fetched raw births, deaths and forest-fire sources only")
+        for path in fetch_all_sources():
+            print("Fetched", path)
         return
-    run(fetch=args.fetch)
+    run(fetch=args.fetch or not args.no_fetch)
 
 
 if __name__ == "__main__":
