@@ -77,40 +77,28 @@ rmk-probability-scale/
 
 ## Run
 
-Create an environment and install the project:
+Setup and build:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
-```
-
-Build everything:
-
-```bash
 build-scale
 ```
 
-Equivalent module command:
-
-```bash
-PYTHONPATH=src python3 -m main --fetch
-```
-
-Build from already downloaded raw files:
+Rebuild from existing raw files (without fetching):
 
 ```bash
 PYTHONPATH=src python3 -m main --no-fetch
 ```
 
-Fetch raw files only:
+Download fresh raw data and rebuild:
 
 ```bash
-PYTHONPATH=src python3 -m main --fetch-only
+PYTHONPATH=src python3 -m main --fetch
 ```
 
-The default command fetches first. Use `--no-fetch` only when you want to rebuild
-from the already downloaded files in `data/raw/`.
+The raw data is committed to the repository in `data/raw/`.
 
 ## Outputs
 
