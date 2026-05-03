@@ -1,0 +1,59 @@
+{
+  "class": "dataset",
+  "label": "RV047: MARRIAGES AND DIVORCES by Year and Indicator",
+  "source": "Statistics Estonia",
+  "updated": "2012-01-13T07:00:00Z",
+  "id": [
+    "Aasta",
+    "N\u00e4itaja"
+  ],
+  "size": [
+    1,
+    1
+  ],
+  "dimension": {
+    "Aasta": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Year",
+      "category": {
+        "index": {
+          "2024": 0
+        },
+        "label": {
+          "2024": "2024"
+        }
+      }
+    },
+    "N\u00e4itaja": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Indicator",
+      "category": {
+        "index": {
+          "1": 0
+        },
+        "label": {
+          "1": "All marriages"
+        }
+      }
+    }
+  },
+  "value": [
+    6361
+  ],
+  "role": {
+    "time": [
+      "Aasta"
+    ]
+  },
+  "version": "2.0",
+  "extension": {
+    "px": {
+      "tableid": "RV047",
+      "decimals": 0
+    }
+  }
+}

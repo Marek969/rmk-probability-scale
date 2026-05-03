@@ -1,0 +1,75 @@
+{
+  "class": "dataset",
+  "label": "RV021: POPULATION, 1 JANUARY by Sex, Year and Age group",
+  "source": "Statistics Estonia",
+  "updated": "2011-12-27T06:00:00Z",
+  "id": [
+    "Sugu",
+    "Aasta",
+    "Vanuser\u00fchm"
+  ],
+  "size": [
+    1,
+    1,
+    1
+  ],
+  "dimension": {
+    "Sugu": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Sex",
+      "category": {
+        "index": {
+          "1": 0
+        },
+        "label": {
+          "1": "Males and females"
+        }
+      }
+    },
+    "Aasta": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Year",
+      "category": {
+        "index": {
+          "2024": 0
+        },
+        "label": {
+          "2024": "2024"
+        }
+      }
+    },
+    "Vanuser\u00fchm": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Age group",
+      "category": {
+        "index": {
+          "1": 0
+        },
+        "label": {
+          "1": "Age groups total"
+        }
+      }
+    }
+  },
+  "value": [
+    1374687
+  ],
+  "role": {
+    "time": [
+      "Aasta"
+    ]
+  },
+  "version": "2.0",
+  "extension": {
+    "px": {
+      "tableid": "RV021",
+      "decimals": 0
+    }
+  }
+}

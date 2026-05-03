@@ -1,0 +1,91 @@
+{
+  "class": "dataset",
+  "label": "RV57: DEATHS PER 100,000 POPULATION by Year, Cause of death by ICD-10, Sex and Age group",
+  "source": "Statistics Estonia",
+  "updated": "2007-06-21T06:00:00Z",
+  "id": [
+    "Aasta",
+    "Surmap\u00f5hjus RHK-10 j\u00e4rgi",
+    "Sugu",
+    "Vanuser\u00fchm"
+  ],
+  "size": [
+    1,
+    1,
+    1,
+    1
+  ],
+  "dimension": {
+    "Aasta": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Year",
+      "category": {
+        "index": {
+          "2024": 0
+        },
+        "label": {
+          "2024": "2024"
+        }
+      }
+    },
+    "Surmap\u00f5hjus RHK-10 j\u00e4rgi": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Cause of death by ICD-10",
+      "category": {
+        "index": {
+          "77": 0
+        },
+        "label": {
+          "77": "....accidental drowning (W65-W74)"
+        }
+      }
+    },
+    "Sugu": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Sex",
+      "category": {
+        "index": {
+          "1": 0
+        },
+        "label": {
+          "1": "Males and females"
+        }
+      }
+    },
+    "Vanuser\u00fchm": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Age group",
+      "category": {
+        "index": {
+          "1": 0
+        },
+        "label": {
+          "1": "Age groups total"
+        }
+      }
+    }
+  },
+  "value": [
+    2.77
+  ],
+  "role": {
+    "time": [
+      "Aasta"
+    ]
+  },
+  "version": "2.0",
+  "extension": {
+    "px": {
+      "tableid": "RV57",
+      "decimals": 2
+    }
+  }
+}

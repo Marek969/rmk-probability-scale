@@ -1,0 +1,62 @@
+{
+  "class": "dataset",
+  "label": "RV11U: LIVE BIRTHS by County and Year",
+  "source": "Statistics Estonia",
+  "updated": "2018-05-29T05:00:00Z",
+  "id": [
+    "Maakond",
+    "Aasta"
+  ],
+  "size": [
+    2,
+    1
+  ],
+  "dimension": {
+    "Maakond": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "County",
+      "category": {
+        "index": {
+          "1": 0,
+          "784": 1
+        },
+        "label": {
+          "1": "Whole country",
+          "784": "..Tallinn"
+        }
+      }
+    },
+    "Aasta": {
+      "extension": {
+        "show": "value"
+      },
+      "label": "Year",
+      "category": {
+        "index": {
+          "2024": 0
+        },
+        "label": {
+          "2024": "2024"
+        }
+      }
+    }
+  },
+  "value": [
+    9690,
+    3262
+  ],
+  "role": {
+    "time": [
+      "Aasta"
+    ]
+  },
+  "version": "2.0",
+  "extension": {
+    "px": {
+      "tableid": "RV11U",
+      "decimals": 0
+    }
+  }
+}
