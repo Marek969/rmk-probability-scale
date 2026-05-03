@@ -1,35 +1,29 @@
-# Thoughts and tradeoffs
+# Notes and Decisions
 
-This document records the main design decisions and tradeoffs for the RMK
-probability scale challenge.
+## Why Estonia
 
-## Why Estonia-centric events
+The assignment asks for Estonian open data, so the project uses Rescue Board fire
+data linked from the Estonian Data Portal.
 
-- The brief explicitly encourages Estonian open data; the implementation uses
-  local datasets.
+## Event Selection
 
-## Event selection
+There are 8 events in the final scale:
 
-- The initial commit included one real file-backed source, two derived events,
-  and a readable pipeline.
-- Statistikaamet tables for births, deaths, causes, and transport accidents
-  were the next sources considered.
+- 2 exact anchors: leap-day birthday and fair die
+- 4 Statistics Estonia rows: drowning, traffic injuries, marriages, births in Tallinn
+- 2 Rescue Board fire probabilities: Harju county and 1+ hectare
 
-## Methodology
+The mix keeps the scale spread out while staying easy to check. Every non-anchor
+number comes from a real source and is written to the CSV with its method and source.
 
-P(event) = numerator / denominator
+## Method
 
-Where numerator and denominator are chosen to reflect the population at risk
-for the given event in the same year (2024).
+Each row uses a simple ratio:
 
-For the current first increment, the forest-fire CSV is used to estimate:
+```text
+probability = numerator / denominator
+```
 
-- probability of a fire on a random day in the current year
-- probability that an observed fire is in Harju county
+The final CSV stores `source_name`, `source_url`, `method`, and `notes`, so every
+value can be traced back to the source.
 
-## Open items
-
-1. Wire actual Statistikaamet endpoints in `src/fetch_data.py`.
-2. Implement parsers in `src/build_events.py` to extract counts.
-3. Add 95% binomial confidence intervals for low-frequency events.
-4. Produce the final graphic and create 5–7 focused commits.

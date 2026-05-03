@@ -1,47 +1,69 @@
 # RMK Data Team Internship 2026: Probability Scale
 
-This repository contains a reproducible Python workflow for building a probability scale: a visual list of events ordered by their probabilities.
+This repository builds a probability scale for Estonia: a small set of real-world
+events placed on one comparable probability axis.
 
-## Why this approach
+The emphasis is on reproducibility and readable statistical choices rather than a
+large front end. The whole workflow is:
 
-The current build uses:
+1. download raw open-data files,
+2. parse each source explicitly,
+3. calculate event probabilities,
+4. write a clean CSV,
+5. render a log-scale chart.
 
-- Programmatic ingestion from official Estonia open data sources.
-- Clean, readable code with small modules.
-- Reproducible output artifacts (CSV + metadata + charts).
-- A graph style optimized for communication, not dashboard complexity.
+## Data Sources
 
-## Data sources
+The implemented build uses official Estonian open-data sources:
 
-Current implemented source: forest and landscape fires CSV linked from andmed.eesti.ee.
+- Estonian Rescue Board forest and landscape fires CSV, discovered via the
+  Estonian Data Portal / `andmed.eesti.ee`:
+  https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv
+- Statistics Estonia PxWeb API:
+  - RV11U: live births by county (Tallinn share)
+  - RV047: marriages and divorces
+  - RV021: total population
+  - TS093: persons injured in traffic accidents
+  - RV57: accidental drowning deaths per 100,000 population
+- Exact probability benchmarks for calibration:
+  - rolling a six on a fair die
+  - leap-day birthday
 
-Direct CSV used:
+The fetch step stores raw responses in `data/raw/`. Generated outputs are written
+to `output/`.
 
-- https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv
+![Probability scale chart](output/probability_scale.png)
 
-The fetch step saves the raw CSV into `data/raw/`.
+## Current Events
 
-Current probability events derived from the raw fire file include:
+The current scale contains 8 events:
 
-- A forest fire happens on a random day
-- A forest fire is in Harju county
+| Event | Probability |
+| --- | ---: |
+| Death by drowning during a year in Estonia | 0.0000277 |
+| Being born on leap day | 0.000684 |
+| Traffic injury during a year in Estonia | 0.00157 |
+| Getting married this year | 0.00463 |
+| Rolling a six on a fair die | 0.1667 |
+| Fire burns 1+ hectare | 0.179 |
+| Fire occurs in Harju county | 0.261 |
+| Being born in Tallinn | 0.337 |
 
-Additional reference anchors (exact-calculation events):
+Exact values are regenerated from the raw files and saved to `output/events.csv`.
 
-- Rolling a six on a fair die
-- Four heads in a row with a fair coin
-- Birth on leap day
+The scale includes:
 
-## Repository structure
+- 2 exact reference anchors (leap day, fair die)
+- 4 Statistics Estonia rates (drowning, traffic injuries, marriages, births in Tallinn)
+- 2 Rescue Board fire incident probabilities (Harju county fires, fires burning 1+ hectare)
+
+## Repository Structure
 
 ```text
 rmk-probability-scale/
   data/
-    raw/
-    processed/
-  output/
-    events.csv
-    probability_scale.png
+    raw/          # downloaded source files, gitignored
+  output/         # generated CSV and chart
   src/
     fetch_data.py
     build_events.py
@@ -49,55 +71,65 @@ rmk-probability-scale/
     main.py
   pyproject.toml
   README.md
+  THOUGHTS.md
   LICENSE
 ```
 
-## Run instructions
+## Run
 
-### 1) Create and activate environment
+Create an environment and install the project:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-```
-
-### 2) Install dependencies
-
-```bash
 pip install -e .
 ```
 
-### 3) Build data and chart
+Build everything:
 
 ```bash
 build-scale
 ```
 
-or
+Equivalent module command:
 
 ```bash
 PYTHONPATH=src python3 -m main --fetch
 ```
 
-To only download the raw file without processing:
+Build from already downloaded raw files:
+
+```bash
+PYTHONPATH=src python3 -m main --no-fetch
+```
+
+Fetch raw files only:
 
 ```bash
 PYTHONPATH=src python3 -m main --fetch-only
 ```
 
+The default command fetches first. Use `--no-fetch` only when you want to rebuild
+from the already downloaded files in `data/raw/`.
+
 ## Outputs
 
-After running, you will get:
+After running, the project creates:
 
-- data/raw/forest_fires_current_year.csv - saved raw CSV
-- output/events.csv - final event table
-- output/probability_scale.png - final figure
+- `output/events.csv` - event table with probabilities, source names, URLs, and
+  calculation methods
+- `output/probability_scale.png` - log-scale probability chart
 
-## Notes on interpretation
+## Interpretation Notes
 
-- Event probabilities are estimated from counts in the raw file.
-- To improve readability, all values are mapped to a unified probability scale p in (0,1].
-- The chart is on a logarithmic axis to show both rare and common events together.
+- Fire-related probabilities are conditional on the observed current-year
+  forest and landscape fire incident file.
+- Statistics Estonia rates are converted to comparable probabilities
+  (`rate per 100` -> `p = rate / 100`, `rate per 100,000` -> `p = rate / 100000`).
+- Exact probability benchmarks are included as scale anchors, not as open-data
+  claims.
+- The chart uses a logarithmic x-axis and side-lane callouts with enforced
+  vertical spacing so text labels stay readable.
 
 ## License
 
